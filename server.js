@@ -177,3 +177,79 @@ const pool = new Pool(
         });
     });
   }
+
+  // Add employee function
+  function addEmployee() {
+    connection.query("SELECT id, title FROM roles", (error, results) => {
+        if (error) {
+            console.log(error);
+            return;
+        }
+        const roles = results.map(({ id, title}) => ({
+            name: title,
+            value: id,
+        }));
+        // obtain employee list from database
+        connection.query(
+            `SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee`,
+            (error, results => {
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                const managers = results.map(({ id, name}) => ({
+                    name, 
+                    value: id,
+                }));
+                inquirer 
+                .prompt([
+                    {
+                        type: "name",
+                        name: "firstName",
+                        message: "What is the employee's first name?",
+                    },
+                    {
+                        type: "input",
+                        name: "lastName"
+                        message: "What is the employee's last name?",
+                    },
+                    {
+                        type: "list",
+                        name: "roleId",
+                        message: "Select the correct employee role:",
+                        choices: roles,
+                    },
+                    {
+                        type: "list",
+                        name: "managerId",
+                        message: "Choose the employee manager",
+                        choices: [
+                            { name: "None", value: null },
+                            ...managers,
+                        ],
+                    },
+                ])
+                .then((answers) => {
+                    const psql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
+                    const values = [
+                        answers.firstname,
+                        answers.lastname,
+                        answers.roleId,
+                        answers.managerId,
+                    ];
+                    conection.query(psql, values, (error) => {
+                        if (error) {
+                            console.error(error);
+                            return;
+                        }
+                        console.log("Employee has been added!")
+                        start();
+                    });
+                })
+                .catch((error) => {
+                    console.error(error);
+                })
+            })
+        )
+    });
+  }
