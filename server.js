@@ -338,3 +338,41 @@ function deleteEmployee() {
         });
     });
 }
+
+// Delete Role function
+function deleteRole() {
+    // retrieve all available roles from the database
+    const query = "SELECT * FROM roles";
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        const choices = res.map((role) => ({
+            name: `${role.title} (${role.id}) - ${role.salary}`,
+            value: role.id,
+        }));
+        // add a "Go Back" option to the list of choices
+        choices.push({ name: "Go Back", value: null });
+        inquirer
+            .prompt({
+                type: "list",
+                name: "roleId",
+                message: "Select the role you want to delete:",
+                choices: choices,
+            })
+            .then((answer) => {
+                // check if the user chose the "Go Back" option
+                if (answer.roleId === null) {
+                    // go back to the deleteDepartmentsRolesEmployees function
+                    deleteDepartmentsRolesEmployees();
+                    return;
+                }
+                const query = "DELETE FROM roles WHERE id = ?";
+                connection.query(query, [answer.roleId], (err, res) => {
+                    if (err) throw err;
+                    console.log(
+                        `Successfully deleted role ${answer.roleId} from the database!`
+                    );
+                    start();
+                });
+            });
+    });
+}
