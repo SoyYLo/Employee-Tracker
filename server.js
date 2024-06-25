@@ -5,18 +5,21 @@ const { Pool } = require('pg');
 // Connect to database
 const pool = new Pool(
     {
+      host: "localhost",
       // Enter PostgreSQL username
       user: 'postgres',
       // Enter PostgreSQL password
       password: 'xUS070es',
       host: 'localhost',
       database: 'employeetracker_db'
-  },
-  console.log('Connected to the employeeTracker_db database!')
-  )
-  
-  pool.connect();
+  });
 
+  pool.connect((err) => {
+    if (err) throw (err)
+        console.log('Connected to the employeeTracker_db database!');
+    start();
+  });
+  
   // Function to start application
   function start() {
     inquirer
@@ -210,7 +213,7 @@ const pool = new Pool(
                     },
                     {
                         type: "input",
-                        name: "lastName"
+                        name: "lastName",
                         message: "What is the employee's last name?",
                     },
                     {
