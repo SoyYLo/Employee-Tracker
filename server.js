@@ -10,7 +10,7 @@ const pool = new Pool(
       // Enter PostgreSQL password
       password: 'xUS070es',
       host: 'localhost',
-      database: 'employeeTracker_db'
+      database: 'employeetracker_db'
   },
   console.log('Connected to the employeeTracker_db database!')
   )
