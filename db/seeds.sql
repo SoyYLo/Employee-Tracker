@@ -1,5 +1,5 @@
 -- Department values --
-INSERT INTO department (department_name)
+INSERT INTO departments (title)
 VALUES 
 ('Marketing'),
 ('Human Resources'),
@@ -8,14 +8,14 @@ VALUES
 ('Sales'),
 ('Quality Assurance'),
 ('Customer Relations'),
-('Service')
+('Service');
 
 -- Roles values --
 INSERT INTO roles (title, salary, department_id)
 VALUES
-('Marketing Manager', 90000, 1),
+('Manager', 95000, 1),
 ('HR Supervisor', 87000, 2),
-('Accounting Director', 92000, 3),
+('Accounting Director', 90000, 3),
 ('Senior Receptionist', 70000, 4),
 ('Sales Manager', 75000, 5),
 ('Quality Assurance Director', 80000, 6),
@@ -25,7 +25,7 @@ VALUES
 -- Employee values --
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
 VALUES 
-('Todd', 'Packer',1, 1),
+('Michael', 'Scott',1, 1),
 ('Toby', 'Flenderson', 2, 2),
 ('Angela', 'Martin', 3, 3),
 ('Pam', 'Beasley', 4, 4),
