@@ -66,7 +66,7 @@ function start() {
                 case "Delete Departments | Roles | Emplployees":
                     deleteDepartmentRoleEmployee();
                     break;
-                case "View total utilized budegt of a department":
+                case "View total utilized budget of a department":
                     viewTotalBudget();
                     break;
 
