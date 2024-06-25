@@ -66,7 +66,7 @@ function start() {
                 case "Delete Departments | Roles | Emplployees":
                     deleteDepartmentRoleEmployee();
                     break;
-                case "View the total utilized budegt of a department":
+                case "View total utilized budegt of a department":
                     viewTotalBudget();
                     break;
 
@@ -303,6 +303,38 @@ function updateEmplRole() {
                         }
                     );
                 });
+        });
+    });
+}
+
+// Delete employee function
+function deleteEmployee() {
+    const deleteEmp = "SELECT * FROM employee";
+    connection.query(deleteEmp, (err, res) => {
+        if (err) throw err;
+        const employeeList = res.map((employee) => ({
+            name: `${employee.first_name} ${employee.last_name}`,
+            value: employee.id,
+        }));
+        employeeList.push({ name: "cancel", value: "back" }); //add "cancel" option
+        inquirer
+        .prompt({
+            type: "list",
+            name: "employee",
+            message: "Which employee do you want to delete?",
+            choices: employeeList,
+        })
+        .then((answer) => {
+            if (answer.id === "cancel") {
+                deleteDepartmentRolesEmployees();
+                return;
+            }
+            const query = "DELETE FROM employee WHERE id = ?";
+            connection.query(query, [answer.id], (err, res) => {
+                if (err) throw err;
+                console.log(`Successfully deleted employee id ${answer.id}.`);
+                start();
+            });
         });
     });
 }
