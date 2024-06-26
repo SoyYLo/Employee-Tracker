@@ -41,7 +41,8 @@ function start() {
         })
         // Cases for each selection option
         .then((answer) => {
-            switch (answer.action) {
+            console.log(answer);
+            switch (answer.manage) {
                 case "View all departments":
                     viewAllDepartments();
                     break;
@@ -76,10 +77,12 @@ function start() {
 
 // View all departments function
 function viewAllDepartments() {
-    const department = "Select * FROM department";
-    connection.department(query, (err, res) => {
+    console.log("view departments");
+    const sql = "Select * FROM departments";
+    pool.query(sql, (err, res) => {
         if (err) throw err;
-        console.table(res);
+        console.table(res.rows);
+        //console.log(res);
         // restart app
         start();
     });
@@ -87,10 +90,10 @@ function viewAllDepartments() {
 
 // View roles function
 function viewAllRoles() {
-    const roles = "SELECT roles.title, roles.id, departments.department_name, roles.salary FROM roles JOIN departments ON roles.department_id = departments.id";
-    connection.roles(query, (err, res) => {
+    const sql = "SELECT roles.title, roles.id, departments.title, roles.salary FROM roles JOIN departments ON roles.department_id = departments.id";
+    pool.query(sql, (err, res) => {
         if (err) throw err;
-        console.table(res);
+        console.table(res.rows);
         // restart app
         start();
     });
@@ -98,14 +101,14 @@ function viewAllRoles() {
 
 // View employees function
 function viewAllEmployees() {
-    const employees = `SELECT e.id, e.first_name, e.last_name, r.title, d.department_name, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager_name
+    const sql = `SELECT e.id, e.first_name, e.last_name, r.title, d.title, r.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager_name
     FROM employee e
     LEFT JOIN roles r ON e.role_id = r.id
     LEFT JOIN departments d ON r.department_id = d.id
     LEFT JOIN employee m ON e.manager_id = m.id;`;
-    connection.employees(query, (err, res) => {
+    pool.query(sql, (err, res) => {
         if (err) throw err;
-        console.table(res);
+        console.table(res.rows);
         //restart app
         start();
     });
@@ -121,8 +124,9 @@ function addDepartment() {
         })
         .then((answer) => {
             console.log(answer.name);
-            const newDep = `INSERT INTO departments (department_name) VALUES ("${answer.name}")`;
-            connection.newDep(quer, (err, res) => {
+            const sql = `INSERT INTO departments (title) VALUES ($1)`;
+            const params = [answer.name];
+            pool.query(sql, params, (err, res) => {
                 if (err) throw err;
                 console.log(`Added new department ${answer.name} to database!`);
                 //restart app
@@ -134,9 +138,17 @@ function addDepartment() {
 
 // Add role function
 function addRole() {
-    const addRole = "SELECT * FROM departments";
-    connection.addRole(query, (err, res) => {
+    const sql = "SELECT * FROM departments";
+    let departments;
+    pool.query(sql, (err, res) => {
         if (err) throw err;
+ departments = res.rows.map(
+    (department) => {
+        { name: department.title, value: department.id}
+    }
+);
+console.log(departments);
+    })
         inquirer
             .prompt([
                 {
@@ -153,37 +165,36 @@ function addRole() {
                     type: "list",
                     name: "department",
                     message: "Select the department for this new role:",
-                    choices: res.map(
-                        (department) => department.department_name
-                    ),
+                    choices: departments,
                 },
             ])
             .then((answers) => {
-                const department = res.find(
-                    (department) => department.name === answers.department
-                );
-                const query = "INSERT INTO roles SET ?";
-                connection.query(
-                    query,
-                    {
-                        title: answers.title,
-                        salary: answers.salary,
-                        department_id: department,
-                    },
-                    (err, res) => {
-                        if (err) throw err;
-                        console.log(`Added role ${answers.title} with salary ${answers.salary} to ${answers.department} department.`);
-                        //restart app
-                        start();
-                    }
-                );
+                console.log(answers);
+                // const department = res.find(
+                //     (department) => department.name === answers.department
+                // );
+                // const query = "INSERT INTO roles SET ?";
+                // connection.query(
+                //     query,
+                //     {
+                //         title: answers.title,
+                //         salary: answers.salary,
+                //         department_id: department,
+                //     },
+                //     (err, res) => {
+                //         if (err) throw err;
+                //         console.log(`Added role ${answers.title} with salary ${answers.salary} to ${answers.department} department.`);
+                //         //restart app
+                //         start();
+                //     }
+                // );
             });
-    });
+    // });
 }
 
 // Add employee function
 function addEmployee() {
-    connection.query("SELECT id, title FROM roles", (error, results) => {
+    pool.query("SELECT id, title FROM roles", (error, results) => {
         if (error) {
             console.log(error);
             return;
@@ -193,7 +204,7 @@ function addEmployee() {
             value: id,
         }));
         // obtain employee list from database
-        connection.query(
+        pool.query(
             `SELECT id, CONCAT(first_name, " ", last_name) AS name FROM employee`,
             (error, results => {
                 if (error) {
@@ -233,14 +244,14 @@ function addEmployee() {
                         },
                     ])
                     .then((answers) => {
-                        const psql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
+                        const sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)";
                         const values = [
                             answers.firstname,
                             answers.lastname,
                             answers.roleId,
                             answers.managerId,
                         ];
-                        conection.query(psql, values, (error) => {
+                        pool.query(sql, values, (error) => {
                             if (error) {
                                 console.error(error);
                                 return;
@@ -259,12 +270,12 @@ function addEmployee() {
 
 // Update employee role function
 function updateEmplRole() {
-    const queryEmployees =
+    const sql =
         "Select employee.id, employee.first_name, employee.last_name, roles.title FROM employee employee LEFT JOIN roles ON employee.role_id = roless.id";
     const roles = "SELECT * FROM roles";
-    connection.query(queryEmployees, (err, resEmployees) => {
+    pool.query(sql, (err, resEmployees) => {
         if (err) throw err;
-        connection.query(roles, (err, resRoles) => {
+        pool.query(roles, (err, resRoles) => {
             if (err) throw err;
             inquirer
                 .prompt([
@@ -292,9 +303,9 @@ function updateEmplRole() {
                     const role = resRoles.find(
                         (role) => role.title === answers.role
                     );
-                    const query = "UPDATE employee SET role_id = ? WHERE id = ?";
-                    connection.query(
-                        query,
+                    const sql = "UPDATE employee SET role_id = ? WHERE id = ?";
+                    pool.query(
+                        sql,
                         [role.id, employee.id],
                         (err, res) => {
                             if (err) throw err;
@@ -309,8 +320,8 @@ function updateEmplRole() {
 
 // Delete employee function
 function deleteEmployee() {
-    const deleteEmp = "SELECT * FROM employee";
-    connection.query(deleteEmp, (err, res) => {
+    const sql = "SELECT * FROM employee";
+    pool.query(sql, (err, res) => {
         if (err) throw err;
         const employeeList = res.map((employee) => ({
             name: `${employee.first_name} ${employee.last_name}`,
@@ -329,8 +340,8 @@ function deleteEmployee() {
                     deleteDepartmentRolesEmployees();
                     return;
                 }
-                const query = "DELETE FROM employee WHERE id = ?";
-                connection.query(query, [answer.id], (err, res) => {
+                const sql = "DELETE FROM employee WHERE id = ?";
+                pool.query(sql, [answer.id], (err, res) => {
                     if (err) throw err;
                     console.log(`Successfully deleted employee id ${answer.id}.`);
                     start();
@@ -342,8 +353,8 @@ function deleteEmployee() {
 // Delete Role function
 function deleteRole() {
     // retrieve all available roles from the database
-    const query = "SELECT * FROM roles";
-    connection.query(query, (err, res) => {
+    const sql = "SELECT * FROM roles";
+    pool.query(sql, (err, res) => {
         if (err) throw err;
         const choices = res.map((role) => ({
             name: `${role.title} (${role.id}) - ${role.salary}`,
@@ -365,8 +376,8 @@ function deleteRole() {
                     deleteDepartmentsRolesEmployees();
                     return;
                 }
-                const query = "DELETE FROM roles WHERE id = ?";
-                connection.query(query, [answer.roleId], (err, res) => {
+                const sql = "DELETE FROM roles WHERE id = ?";
+                pool.query(sql, [answer.roleId], (err, res) => {
                     if (err) throw err;
                     console.log(
                         `Successfully deleted role ${answer.roleId} from the database!`
@@ -380,8 +391,8 @@ function deleteRole() {
 // Delete department function
 function deleteDep() {
     // retrieve list of departments
-    const query = "SELECT * FROM departments";
-    connection.query(query, (err, red) => {
+    const sql = "SELECT * FROM departments";
+    pool.query(sql, (err, red) => {
         if (err) throw err;
         const depChoices = res.map((department) => ({
             name: department.department_name,
@@ -402,9 +413,9 @@ function deleteDep() {
                 if (answer.department === "back") {
                     deleteDepartmentRolesEmployees();
                 } else {
-                    const query = "DELETE FROM departments WHERE id = ?";
-                    connection.query(
-                        query,
+                    const sql = "DELETE FROM departments WHERE id = ?";
+                    pool.query(
+                        sql,
                         [answer.department],
                         (err, res) => {
                             if (err) throw err;
@@ -420,11 +431,11 @@ function deleteDep() {
 
 // View total budget function
 function viewTotalBudget() {
-    const query = "SELECT * FROM departments";
-    connection.query(query, (err, res) => {
+    const sql = "SELECT * FROM departments";
+    pool.sql(query, (err, res) => {
         if (err) throw err;
         const depChoices = res.map((department) => ({
-            name: department.department_name,
+            name: department.title,
             value: department.id,
         }));
 
@@ -439,7 +450,7 @@ function viewTotalBudget() {
             .then((answer) => {
                 //calculate total salary
                 const query =
-                    `SELECT departments.department_name AS department,
+                    `SELECT departments.title AS department,
                      SUM(roles.salary) AS total_salary
                      FROM departments
                      INNER JOIN roles ON departments.id = roles.department_id
@@ -447,7 +458,7 @@ function viewTotalBudget() {
                      WHERE
                      departments.id = ?
                      GROUP BY departments.id;`;
-                connection.query, (answer.departmentID), (err, res) => {
+                pool.query, (answer.departmentID), (err, res) => {
                     if (err) throw err;
                     const salaryTotal = res[0].salary_total;
                     console.log(`The calculated total employee salary is ${salaryTotal}`);
