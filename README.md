@@ -26,7 +26,7 @@ When the user chooses an action, then they are presented to proper information t
 
 ## Walkthrough Link
 
-## Screenshot
+https://drive.google.com/file/d/1RemwdLlAq6U4PrTue52pn2eB6FFo9Y0x/view?usp=sharing
 
 ## References
 
